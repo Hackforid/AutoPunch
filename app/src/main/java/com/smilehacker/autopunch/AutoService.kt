@@ -16,6 +16,9 @@ class AutoService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (!Prefs.enable) {
+            return
+        }
         event ?: return
         when(event.eventType) {
             //AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> handleNotification(event)
