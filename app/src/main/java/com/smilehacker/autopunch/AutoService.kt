@@ -2,6 +2,7 @@ package com.smilehacker.autopunch
 
 import android.accessibilityservice.AccessibilityService
 import android.app.Notification
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -20,6 +21,7 @@ class AutoService : AccessibilityService() {
             return
         }
         event ?: return
+        //Log.i(TAG, "event = $event pkg=${event.packageName}")
         when(event.eventType) {
             //AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED -> handleNotification(event)
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED  -> handleWindow(event)
@@ -54,9 +56,9 @@ class AutoService : AccessibilityService() {
 //            closePacket()
 //        }
         when(className) {
-            "com.tencent.wework.launch.WwMainActivity" -> jumpToWorkStation()
-            "com.tencent.wework.setting.controller.EnterpriseAppActivity" -> jumpToAttendance()
-            "com.tencent.wework.enterprise.attendance.controller.AttendanceActivity2" -> doPunch()
+//            "com.tencent.wework.launch.WwMainActivity" -> jumpToWorkStation()
+//            "com.tencent.wework.setting.controller.EnterpriseAppActivity" -> jumpToAttendance()
+            "com.tencent.wework.enterprise.attendance.controller.AttendanceActivity2" -> checkPunch()
         }
 
     }
@@ -87,9 +89,31 @@ class AutoService : AccessibilityService() {
         node.recycle()
     }
 
+    private fun checkPunch() {
+        Log.i(TAG, "checkPunck")
+        val countDownTimer = object : CountDownTimer(10000, 1000) {
+            override fun onFinish() {
+            }
+
+            override fun onTick(millisUntilFinished: Long) {
+                val node = findNodeByText(rootInActiveWindow, "你已在打卡范围内")
+                if (node != null) {
+                    Log.i(TAG, "checkPunck done")
+                    this.cancel()
+                    doPunch()
+                    node.recycle()
+                }
+            }
+        }
+        countDownTimer.start()
+    }
+
     private fun doPunch() {
-        val node = findNodeByText(rootInActiveWindow, "下班打卡")
-        Log.i(TAG, "can daka")
+        Log.i(TAG, "doPunch")
+        val node = findNodeByText(rootInActiveWindow, "下班打卡") ?: return
+        Log.i(TAG, "click Punch")
+        clickNode(node)
+        node.recycle()
     }
 
     private fun findNodeByText(node: AccessibilityNodeInfo, text: String) : AccessibilityNodeInfo? {
